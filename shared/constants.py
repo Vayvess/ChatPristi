@@ -1,5 +1,11 @@
 from enum import Enum
 
-class RequestType(int, Enum):
-    LOGIN = 0
+class MsgType(str, Enum):
+    LOGIN = '0'
+
+class MsgField(str, Enum):
+    TYPE = '0'
     
+    # LOGIN
+    USERN = '1'
+    PASSW = '2'
