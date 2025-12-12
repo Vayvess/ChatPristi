@@ -1,3 +1,5 @@
+import json
+
 class TcpMsg:
     TYPE = '0'
     DATA = '1'
@@ -6,6 +8,8 @@ class TcpMsg:
     
     # CLIENT TO SERVER
     ROOM_JOIN = '0'
+    ROOM_ECHO = '1'
 
     # SERVER TO CLIENT
     ROOM_JOINED = '0'
+    ROOM_ECHOED = '1'

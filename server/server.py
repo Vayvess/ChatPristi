@@ -3,6 +3,7 @@ import selectors
 
 from server.session import Session
 from server.dispatcher import Dispatcher
+from server.rooms import RoomManager
 
 
 class Server:
@@ -17,6 +18,7 @@ class Server:
         self.selector.register(self.tcp_sock, selectors.EVENT_READ, None)
 
         self.dispatcher = Dispatcher(self)
+        self.room_manager = RoomManager()
     
     def handle_accept(self):
         try:
@@ -35,7 +37,7 @@ class Server:
             self.selector.unregister(sess.sock)
             sess.sock.close()
     
-    def send_tcpmsg(self, sess, msg):
+    def send_packet(self, sess, packet):
         if not sess.alive:
             return
         
@@ -43,7 +45,7 @@ class Server:
             RW_EVENT = selectors.EVENT_READ | selectors.EVENT_WRITE
             self.selector.modify(sess.sock, RW_EVENT, sess)
         
-        sess.buffer_tcpmsg(msg)
+        sess.sbuff.extend(packet)
     
     def process_data(self, sess, data):
         if not sess.alive:
@@ -106,7 +108,23 @@ class Server:
             self.handle_network()
     
     def shutdown(self):
-        pass
+        print("\nShutting down...")
+        try:
+            self.selector.unregister(self.tcp_sock)
+        except Exception:
+            pass
+        self.tcp_sock.close()
+
+        for key in list(self.selector.get_map().values()):
+            sess = key.data
+            if sess is not None:
+                self.close_session(sess)
+        
+        try:
+            self.selector.close()
+        except Exception:
+            pass
+        print("Server shutdown")
 
 if __name__ == '__main__':
     server = Server('localhost', 3000)

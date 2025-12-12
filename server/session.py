@@ -13,14 +13,8 @@ class Session:
         
         # SESSION DATA
         self.usern = f'anon{Session.SESSID}'
+        self.curr_room = 'default'
         Session.SESSID += 1
-    
-    def buffer_tcpmsg(self, msg):
-        encoded = json.dumps(msg).encode()
-        blen = len(encoded).to_bytes(2, 'big')
-
-        self.sbuff.extend(blen)
-        self.sbuff.extend(encoded)
     
     def extract_tcpmsg(self, data):
         messages = []

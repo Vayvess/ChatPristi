@@ -1,3 +1,67 @@
-Screen {
+#connect_layout {
     align: center middle;
+    height: 1fr;
+    width: 1fr;
+    padding: 2 4;
+    content-align: center middle;
+}
+
+#connect_title {
+    text-align: center;
+    padding-bottom: 1;
+    margin-bottom: 1;
+    height: auto;
+}
+
+#connect_inputaddr,
+#connect_inputport {
+    width: 32;
+    height: auto;
+    padding: 1;
+    border: round cyan;
+    text-align: center;
+}
+
+#connect_inputaddr:focus,
+#connect_inputport:focus {
+    border: round purple;
+}
+
+#connect_btntryconnect {
+    width: 32;
+    height: auto;
+    padding: 1;
+    content-align: center middle;
+    border: round $accent;
+    background: $accent 10%;
+}
+
+#connect_btntryconnect:hover {
+    background: $accent 20%;
+}
+
+#connect_btntryconnect:focus {
+    border: double $accent;
+}
+
+#room_layout {
+    align: center middle;
+    height: 1fr;
+    width: 1fr;
+}
+
+#room_logpanel {
+    border: solid purple;
+    height: 1fr;
+    padding: 1 1;
+}
+
+#room_input_bar {
+    height: auto;
+    padding: 1;
+    border: tall transparent;
+}
+
+#room_textinput {
+    width: 1fr;
 }

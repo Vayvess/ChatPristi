@@ -4,10 +4,16 @@ import socket
 import threading
 import selectors
 
+from textual.message import Message
+
+class ConnectionLost(Message):
+    """Sent by Networker when connection is lost."""
+
 class Networker(threading.Thread):
-    def __init__(self):
+    def __init__(self, app):
         super().__init__(daemon=True)
 
+        self.app = app
         self.alive = True
         self.rbuff = bytearray()
 
@@ -153,4 +159,8 @@ class Networker(threading.Thread):
                 if mask & selectors.EVENT_WRITE:
                     self.handle_tcpwrite()
         
-        print("Networker shutdown")
+
+        self.selector.unregister(self.sock)
+        self.sock.close()
+        self.selector.close()
+        self.app.post_message(ConnectionLost())
