@@ -8,6 +8,7 @@ from server.rooms import RoomManager
 
 class Server:
     def __init__(self, host, port):
+        self.running = True
         self.tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.tcp_sock.bind((host, port))
@@ -32,10 +33,12 @@ class Server:
     
     def close_session(self, sess: Session):
         if sess.alive:
-            sess.alive = False
+            self.room_manager.leave(self, sess)
+            
             print(f"{sess.usern} disconnected from server !")
             self.selector.unregister(sess.sock)
             sess.sock.close()
+            sess.alive = False
     
     def send_packet(self, sess, packet):
         if not sess.alive:
@@ -91,21 +94,19 @@ class Server:
             sess.sbuff.clear()
             self.selector.modify(sess.sock, selectors.EVENT_READ, sess)
     
-    def handle_network(self, timeout=None):
-        events = self.selector.select(timeout)
-        for key, mask in events:
-            sess = key.data
-            if sess is None:
-                self.handle_accept()
-            else:
-                if mask & selectors.EVENT_READ:
-                    self.handle_tcpread(sess)
-                if mask & selectors.EVENT_WRITE:
-                    self.handle_tcpwrite(sess)
-    
     def run(self):
-        while True:
-            self.handle_network()
+        while self.running:
+            # HANDLE NETWORK
+            events = self.selector.select()
+            for key, mask in events:
+                sess = key.data
+                if sess is None:
+                    self.handle_accept()
+                else:
+                    if mask & selectors.EVENT_READ:
+                        self.handle_tcpread(sess)
+                    if mask & selectors.EVENT_WRITE:
+                        self.handle_tcpwrite(sess)
     
     def shutdown(self):
         print("\nShutting down...")

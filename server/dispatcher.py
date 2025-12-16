@@ -21,6 +21,9 @@ def room_echo(server, sess, msg):
     
     server.room_manager.echo(server, sess, text)
 
+def room_list(server, sess, msg):
+    server.room_manager.list(server, sess)
+
 def room_create(server, sess, msg):
     pass
 
@@ -29,7 +32,8 @@ class Dispatcher:
         self.server = server
         self.handlers = {
             TcpMsg.ROOM_JOIN: room_join,
-            TcpMsg.ROOM_ECHO: room_echo
+            TcpMsg.ROOM_ECHO: room_echo,
+            TcpMsg.ROOM_LIST: room_list
         }
     
     def dispatch(self, sess, msg):
@@ -40,3 +44,5 @@ class Dispatcher:
         handler = self.handlers.get(msgtype)
         if handler:
             handler(self.server, sess, msg)
+        else:
+            print(msgtype)

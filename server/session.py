@@ -12,8 +12,9 @@ class Session:
         self.sbuff = bytearray()
         
         # SESSION DATA
+        self.sessid = Session.SESSID
         self.usern = f'anon{Session.SESSID}'
-        self.curr_room = 'default'
+        self.curr_room = ''
         Session.SESSID += 1
     
     def extract_tcpmsg(self, data):
@@ -55,3 +56,6 @@ class Session:
             self.rbuff = bytearray(view[k:])
         
         return messages
+    
+    def __hash__(self):
+        return self.sessid

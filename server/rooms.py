@@ -1,6 +1,4 @@
 import json
-import time
-
 from shared.constants import TcpMsg
 
 def serialize_msg(msg):
@@ -12,19 +10,28 @@ def serialize_msg(msg):
     return serialized
 
 class Room:
-    def __init__(self):
-        self.sessions = []
+    def __init__(self, name):
+        self.name = name
+        self.sessions = set()
     
-    def add_sess(self, server, sess):
-        self.sessions.append(sess)
-
-        packet = serialize_msg({
-            TcpMsg.TYPE: TcpMsg.ROOM_JOINED,
-            TcpMsg.DATA: sess.usern
-        })
-
+    def broadcast_msg(self, server, msg):
+        packet = serialize_msg(msg)
         for sess in self.sessions:
             server.send_packet(sess, packet)
+    
+    def add_sess(self, server, sess):
+        self.sessions.add(sess)
+        self.broadcast_msg(server, {
+            TcpMsg.TYPE: TcpMsg.ROOM_JOINED,
+            TcpMsg.DATA: (sess.usern, self.name)
+        })
+    
+    def remove_sess(self, server, sess):
+        self.sessions.discard(sess)
+        self.broadcast_msg(server, {
+            TcpMsg.TYPE: TcpMsg.ROOM_ECHO,
+            TcpMsg.DATA: f"[bold purple]Server:[/bold purple] {sess.usern} left the room"
+        })
     
     def echo(self, server, sess, text):
         echoed = f"{sess.usern}: {text}"
@@ -39,7 +46,15 @@ class Room:
 class RoomManager:
     def __init__(self):
         self.rooms = {
-            'default': Room()
+            'default': Room('default'),
+            'alpha': Room('alpha'),
+            'bravo': Room('bravo'),
+            'charlie': Room('charlie'),
+            'delta': Room('delta'),
+            'echo': Room('echo'),
+            'foxtrot': Room('foxtrot'),
+            'golf': Room('golf'),
+            'hotel': Room('hotel')
         }
     
     def join(self, server, sess, name):
@@ -47,6 +62,11 @@ class RoomManager:
         if room is None:
             return
         
+        prev_room = self.rooms.get(sess.curr_room)
+        if prev_room:
+            prev_room.remove_sess(server, sess)
+        
+        sess.curr_room = name
         room.add_sess(server, sess)
     
     def echo(self, server, sess, text):
@@ -55,3 +75,19 @@ class RoomManager:
             return
         
         room.echo(server, sess, text)
+    
+    def list(self, server, sess):
+        room_list = tuple(k for k in self.rooms)
+        packet = serialize_msg({
+            TcpMsg.TYPE: TcpMsg.ROOM_LISTED,
+            TcpMsg.DATA: room_list
+        })
+
+        server.send_packet(sess, packet)
+    
+    def leave(self, server, sess):
+        room = self.rooms.get(sess.curr_room)
+        if room is None:
+            return
+        
+

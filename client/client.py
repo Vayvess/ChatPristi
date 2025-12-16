@@ -35,7 +35,7 @@ class Client(App):
             else:
                 self.screen.handle_tcpmsg(tcpmsg)
     
-    def _boot_networker(self, addr, port):
+    def _boot_networker(self):
         self.networker.start()
         self.dispatcher = self.set_interval(
             0.05, self._dispatch_tcpmsg
@@ -43,8 +43,6 @@ class Client(App):
         self.push_screen(RoomScreen())
     
     def try_connect(self, addr, port):
-        self.notify("Connecting attempt...", severity="information")
-
         if self.networker is None:
             self.networker = Networker()
         
@@ -52,7 +50,7 @@ class Client(App):
 
         if ok:
             self.notify(f"Connected to {addr} on port {port}",severity="success")
-            self._boot_networker(addr, port)
+            self._boot_networker()
         else:
             self.notify("Connection failed...", severity="error")
     

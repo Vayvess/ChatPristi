@@ -1,3 +1,5 @@
+# === CONNECT SCREEN ===
+
 #connect_layout {
     align: center middle;
     height: 1fr;
@@ -8,6 +10,7 @@
 
 #connect_title {
     text-align: center;
+    align: center middle;
     padding-bottom: 1;
     margin-bottom: 1;
     height: auto;
@@ -44,16 +47,20 @@
     border: double $accent;
 }
 
+# === ROOM SCREEN ===
+
 #room_layout {
-    align: center middle;
     height: 1fr;
     width: 1fr;
+}
+
+#room_topbar {
+    height: auto;
 }
 
 #room_logpanel {
     border: solid purple;
     height: 1fr;
-    padding: 1 1;
 }
 
 #room_input_bar {
@@ -64,4 +71,40 @@
 
 #room_textinput {
     width: 1fr;
+}
+
+# === ROOMLIST MODALSCREEN ===
+
+RoomListModal {
+    align: center middle;
+}
+
+RoomListModal > ScrollableContainer {
+    align: center middle;
+    width: 85%;
+    height: auto;
+}
+
+RoomListModal > ScrollableContainer > OptionList {
+    width: 65%;
+    height: auto;
+    content-align: center middle;
+}
+
+# === ROOMCREATE MODALSCREEN ===
+
+RoomCreateModal {
+    align: center middle;
+}
+
+RoomCreateModal > Container {
+    align: center middle;
+    width: 65%;
+    height: auto;
+}
+
+RoomCreateModal > Container > Horizontal {
+    width: 65%;
+    height: auto;
+    content-align: center middle;
 }
