@@ -1,44 +1,49 @@
 import socket
 import selectors
 
+import logging
+import argparse
+
 from server.session import Session
 from server.dispatcher import Dispatcher
 from server.rooms import RoomManager
 
 
 class Server:
-    def __init__(self, host, port):
+    def __init__(self):
         self.running = True
-        self.tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.tcp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.tcp_sock.bind((host, port))
-        self.tcp_sock.setblocking(False)
-        self.tcp_sock.listen()
-
         self.selector = selectors.DefaultSelector()
-        self.selector.register(self.tcp_sock, selectors.EVENT_READ, None)
+        self.tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.dispatcher = Dispatcher(self)
         self.room_manager = RoomManager()
+    
+    def configure(self, host, port):
+        self.tcp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.tcp_sock.bind((host, port))
+        self.tcp_sock.listen()
+
+        self.tcp_sock.setblocking(False)
+        self.selector.register(self.tcp_sock, selectors.EVENT_READ, None)
     
     def handle_accept(self):
         try:
             sock, addr = self.tcp_sock.accept()
         except socket.error as err:
-            print("accept: ", err)
+            logging.error(f"handle_accept: {err}")
         else:
             sock.setblocking(False)
             sess = Session(sock)
+            logging.info(f"{sess.usern} established connection !")
             self.selector.register(sock, selectors.EVENT_READ, sess)
     
     def close_session(self, sess: Session):
         if sess.alive:
             self.room_manager.leave(self, sess)
-            
-            print(f"{sess.usern} disconnected from server !")
             self.selector.unregister(sess.sock)
             sess.sock.close()
             sess.alive = False
+            logging.info(f"{sess.usern} disconnected from server !")
     
     def send_packet(self, sess, packet):
         if not sess.alive:
@@ -56,8 +61,10 @@ class Server:
         
         for msg in sess.extract_tcpmsg(data):
             if msg != -1:
+                logging.info(f"{sess.usern} sent packet: {data}")
                 self.dispatcher.dispatch(sess, msg)
             else:
+                logging.info(f"{sess.usern} sent corrupted message")
                 self.close_session(sess)
                 return
     
@@ -65,6 +72,7 @@ class Server:
         try:
             data = sess.sock.recv(4096)
         except OSError as e:
+            logging.error(f"handle_tcpread: {sess.usern}, {e}")
             self.close_session(sess)
         
         if data:
@@ -82,7 +90,8 @@ class Server:
             sent = sess.sock.send(sess.sbuff)
         except BlockingIOError:
             return
-        except OSError:
+        except OSError as e:
+            logging.error(f"handle_tcpwrite: {sess.usern}, {e}")
             self.close_session(sess)
             return
         else:
@@ -109,11 +118,10 @@ class Server:
                         self.handle_tcpwrite(sess)
     
     def shutdown(self):
-        print("\nShutting down...")
         try:
             self.selector.unregister(self.tcp_sock)
-        except Exception:
-            pass
+        except Exception as err:
+            logging.error(f"Server shutdown: {err}")
         self.tcp_sock.close()
 
         for key in list(self.selector.get_map().values()):
@@ -123,13 +131,48 @@ class Server:
         
         try:
             self.selector.close()
-        except Exception:
-            pass
-        print("Server shutdown")
+        except Exception as err:
+            logging.error(f"Server shutdown: {err}")
+        
+        logging.info(f"Server shutdown")
 
-if __name__ == '__main__':
-    server = Server('localhost', 3000)
+
+def main():
+    parser = argparse.ArgumentParser(description="IRC Server using TCP")
+
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Display debug logs"
+    )
+
+    parser.add_argument(
+        "--addr",
+        default="localhost",
+        help="Bind address (default: localhost)"
+    )
+
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=3000,
+        help="Port to listen on (default: 3000)"
+    )
+
+    args = parser.parse_args()
+
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    server = Server()
+    server.configure(args.addr, args.port)
+
     try:
+        logging.info(f"\nServer is listening on {args.addr}:{args.port}")
         server.run()
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt:
+        logging.info("\nShutting down server...")
         server.shutdown()
+
+if __name__ == "__main__":
+    main()

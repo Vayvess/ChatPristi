@@ -111,7 +111,7 @@ class RoomScreen(Screen):
     
     @on(Button.Pressed, "#room_btnsend")
     @on(Input.Submitted, "#room_textinput")
-    def send(self, event):
+    def room_echo(self, event):
         input_widget = self.query_one("#room_textinput", Input)
         text = input_widget.value.strip()
         if text:
@@ -122,7 +122,7 @@ class RoomScreen(Screen):
             })
     
     @on(Button.Pressed, "#room_btncreate")
-    def send(self, event):
+    def room_create(self, event):
         def callback(room_name):
             if len(room_name) > 0:
                 

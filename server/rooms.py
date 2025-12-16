@@ -85,6 +85,15 @@ class RoomManager:
 
         server.send_packet(sess, packet)
     
+    def create(self, server, sess, rname):
+        if rname in self.rooms:
+            return
+        
+        room = Room(rname)
+        self.rooms[rname] = room
+        room.add_sess(server, sess)
+        
+    
     def leave(self, server, sess):
         room = self.rooms.get(sess.curr_room)
         if room is None:
