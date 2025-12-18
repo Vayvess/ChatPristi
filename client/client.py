@@ -1,3 +1,4 @@
+import threading
 from textual.app import App
 
 from client.networker import Networker
@@ -46,13 +47,19 @@ class Client(App):
         if self.networker is None:
             self.networker = Networker()
         
-        ok = self.networker.connect(addr, port)
+        def worker():
+            ok = self.networker.connect(addr, port)
+            if ok:
+                self.call_from_thread(lambda: self.notify(
+                    f"Connected to {addr} on port {port}", severity="success"
+                ))
+                self.call_from_thread(self._boot_networker)
+            else:
+                self.call_from_thread(lambda: self.notify(
+                    "Connection failed...", severity="error"
+                ))
 
-        if ok:
-            self.notify(f"Connected to {addr} on port {port}",severity="success")
-            self._boot_networker()
-        else:
-            self.notify("Connection failed...", severity="error")
+        threading.Thread(target=worker, daemon=True).start()
     
     def send_tcpmsg(self, msg):
         if self.networker:
